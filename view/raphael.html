@@ -1,0 +1,167 @@
+<html ng-app="Labirynth">
+  <head>
+    <title></title>
+    <script src="https://code.jquery.com/jquery-2.1.4.min.js" charset="utf-8"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
+    <script type="text/javascript" src="./js/raphael-min.js"></script>
+    <script type="text/javascript" src="./js/custom.js"></script>
+    <script type="text/javascript">
+    angular.module("Labirynth",[]);
+    angular.module("Labirynth").controller("LabController", function($scope, $http) {
+
+
+      $scope.logs = [];
+
+      $scope.id = 1;
+      $scope.step = 1;
+      $scope.status;
+
+      $scope.getLabLog = function(id){
+          var url = "http://localhost:3000/report/lab/"+id;
+          $http.get(url)
+            .success(function (data){
+              $scope.step = 1;
+              $scope.logs = data;
+              $scope.loadRaphael($scope.step);
+            })
+            .error(function (argument) {
+              console.log(data);
+            })
+      };
+
+      $scope.previousStep = function(){
+
+        if($scope.step-1 > 0){
+          $scope.step--;
+          $scope.loadRaphael($scope.step);
+        }
+      };
+
+      $scope.nextStep = function(){
+
+        if($scope.step-1 < $scope.logs.length-1){
+          $scope.step++;
+          $scope.loadRaphael($scope.step);
+        }
+      };
+
+      $scope.deleteRaphael = function(){
+        // for (var i = 0; i < $scope.lines.length; i++) {
+        //   for (var j = 0; j < $scope.lines[i].length; j++) {
+        //     $scope.lines[i][j].remove();
+        //   }
+        // }
+        $scope.paper.remove();
+      }
+
+      $scope.loadRaphael = function(step) {
+
+          if($scope.paper){
+            $scope.deleteRaphael();
+          }
+
+          $scope.status = $scope.logs[step-1].status;
+
+          if(step < 1){
+            return;
+          }
+
+
+
+          var rectSize = {
+            x:50,
+            y:50
+          };
+
+          var size = {
+            x:$scope.logs[0].map.lab[0].length*rectSize.y,
+            y:$scope.logs[0].map.lab.length*rectSize.x
+          };
+
+          var cellSpacing = 0;
+          var marginTop = size.y*0.2;
+          var marginLeft = size.x*0.1;
+          var qtdRectPorLinha = Math.floor((size.x/(rectSize.x+cellSpacing)));
+
+          $scope.paper = Raphael('draw', size.x, size.y);
+          var paper = $scope.paper;
+          var index = step-1;
+
+
+          var arr = $scope.logs[index].map.lab;
+          $scope.lines = [];
+          var col = 0;
+          var lin = 0;
+          var borderRadius = 0;
+          //var img = paper.image("http://placehold.it/50x50", 50,50,50,50);
+
+          var block = "./img/barrier.png";
+          var cat = "./img/pxlCat.gif";
+          var rat = "./img/pxlRat.gif";
+          var wall = "./img/wall.png";
+          var path = "./img/path.png";
+          var doorOut = "./img/doorOut.png";
+          var doorIn = "./img/doorIn.png";
+
+          for (var i = 0; i < arr.length; i++) {
+            var columns = [];
+            for (var j = 0; j < arr[i].length; j++) {
+
+              var yPos = rectSize.y*i + cellSpacing*i;
+              var xPos = rectSize.x*j + cellSpacing*j;
+              var imgSrc;
+
+              switch (arr[i][j]) {
+                case "M":
+                  imgSrc = rat;
+                  break;
+                case "C":
+                  imgSrc = cat;
+                  break;
+                case "0":
+                  imgSrc = wall;
+                  break;
+                case "1":
+                  imgSrc = path;
+                  break;
+                case "S":
+                  imgSrc = doorIn;
+                  break;
+                case "F":
+                  imgSrc = doorOut;
+                  break;
+                default:
+                  imgSrc = block;
+              }
+
+              var image = paper.image(imgSrc, xPos, yPos, rectSize.x, rectSize.y, borderRadius);
+              image.node.id = "L"+i+"C"+j;
+              image.node.setAttribute("class","labCell");
+
+              columns.push(image);
+            }
+            $scope.lines.push(columns);
+          }
+
+          jQuery('svg').css({'background-image':'url("./img/path50.png")'});
+      };
+
+    });
+    </script>
+  </head>
+  <body ng-controller="LabController">
+    <label for="">Id Labirinto</label>
+    <br/>
+    <input type="number" min="1" ng-model="id">
+    <input type="button" name="name" value="Buscar" ng-click="getLabLog(id)">
+    <br/>
+    <br/>
+    <br/>
+    <h3>Passo: {{step}} &nbsp &nbsp &nbsp &nbsp Status: {{status}}</h3>
+    <div class="" id="draw">
+
+    </div>
+    <button type="button" name="button" ng-click="previousStep()"><- Anterior</button>
+    <button type="button" name="button" ng-click="nextStep()">Seguinte -></button>
+  </body>
+</html>

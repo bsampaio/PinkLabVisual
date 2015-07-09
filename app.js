@@ -1,36 +1,34 @@
-var express = require('express')
-  , cors = require('cors')
-  , app = express();
+var express = require('express'),
+cors = require('cors'),
+app = express(),
+Controller = require ('./controllers/SmartBrainController');
 
+//Utilizando o middleware para CORS
 app.use(cors());
 
+//Cadastrando a view engine EJS
 app.set('view engine', 'ejs');
 
-function startService(){
-
-}
-
 app.get('/report/lab/:id', function(req, res, next){
-  var PinkController = require('./controller/PinkController.js');
-  var Controller = new PinkController('lab'+req.param("id"));
-  var responseList = [];
-
-  while (Controller.ratoVivo && !Controller.acabouJogo){
-    Controller.rodaTurno();
-    responseList.push(Controller.getReport());
+  var id = req.params.id;
+  var c = new Controller('lab'+id);
+  var logs = [];
+  while(! c.gameOver){
+  	logs.push(c.runStep());
   }
-
-  var obj = {
-    "responses":responseList
-  }
-
-  res.json(obj);
-});
-
-app.get('/lab/:id', function(req, res, next){
-  res.render('index',{ id:req.param("id") });
+  res.json(logs);
 });
 
 app.listen(3000, function(){
   console.log('CORS-enabled web server listening on port 3000');
 });
+
+/*Controller de Console*/
+// var ConsoleController = require ('./controllers/ConsoleController');
+// var cc = new ConsoleController(c);
+// cc.start();
+
+// //XXX: Insane test. Don't use in production
+// while(! c.gameOver){
+//   c.runStep();
+// }
